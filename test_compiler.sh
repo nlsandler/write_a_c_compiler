@@ -7,7 +7,10 @@ fi
 
 cmp=$1
 
-num_stages=1
+success_total=0
+failure_total=0
+
+num_stages=2
 for i in `seq 1 $num_stages`; do
     success=0
     fail=0
@@ -60,4 +63,9 @@ for i in `seq 1 $num_stages`; do
     done
     echo "===================Stage $i Summary================="
     printf "%d successes, %d failures\n" $success $fail
+    ((success_total=success_total+success))
+    ((failure_total=failure_total + fail))
 done
+
+echo "===================TOTAL SUMMARY===================="
+printf "%d successes, %d failures\n" $success_total $failure_total
