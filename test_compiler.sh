@@ -10,7 +10,7 @@ cmp=$1
 success_total=0
 failure_total=0
 
-num_stages=2
+num_stages=3
 for i in `seq 1 $num_stages`; do
     success=0
     fail=0
