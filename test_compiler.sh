@@ -10,7 +10,7 @@ cmp=$1
 success_total=0
 failure_total=0
 
-num_stages=3
+num_stages=4
 for i in `seq 1 $num_stages`; do
     success=0
     fail=0
@@ -18,7 +18,7 @@ for i in `seq 1 $num_stages`; do
     echo "STAGE $i"
     echo "===================Valid Programs==================="
     for prog in ./stage_$i/valid/*.c; do
-        gcc $prog
+        gcc -w $prog
         ./a.out
         expected_exit_code=$?
         rm a.out
