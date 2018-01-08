@@ -3,6 +3,16 @@
 padding_dots=$(printf '%0.1s' "."{1..60})
 padlength=50
 
+test_success () {
+    echo "OK"
+    ((success++)) 
+}
+
+test_failure () {
+    echo "FAIL"
+    ((fail++))    
+}
+
 if [ "$1" == "" ]; then
     echo "USAGE: ./test_compiler.sh /path/to/compiler"
     exit 1
@@ -13,7 +23,8 @@ cmp=$1
 success_total=0
 failure_total=0
 
-num_stages=4
+num_stages=5
+
 for i in `seq 1 $num_stages`; do
     success=0
     fail=0
@@ -34,13 +45,23 @@ for i in `seq 1 $num_stages`; do
         printf '%s' "$test_name"
         printf '%*.*s' 0 $((padlength - ${#test_name})) "$padding_dots"
 
-        if [ "$expected_exit_code" -ne "$actual_exit_code" ]
-        then
-            echo "FAIL"
-            ((fail++))
+        if [[ $test_name == "undefined"* ]]; then
+            # return value is undefined
+            # make sure it runs w/out segfaulting, but otherwise don't check exit code
+            if [ "$actual_exit_code" -eq 139 ]; then
+                #segfault!
+                test_failure
+            else
+                test_success
+            fi
         else
-            echo "OK"
-            ((success++))
+            # make sure exit code is correct
+            if [ "$expected_exit_code" -ne "$actual_exit_code" ]
+            then
+                test_failure
+            else
+                test_success
+            fi
         fi
         rm $base      
     done
@@ -57,13 +78,11 @@ for i in `seq 1 $num_stages`; do
 
         if [[ -f $base || -f $base".s" ]] #make sure neither executable nor assembly was produced
         then
-            echo "FAIL"
-            ((fail++))
+            test_failure
             rm $base 2>/dev/null
             rm $base".s" 2>/dev/null
         else
-            echo "OK"
-            ((success++))
+            test_success
         fi
     done
     echo "===================Stage $i Summary================="
