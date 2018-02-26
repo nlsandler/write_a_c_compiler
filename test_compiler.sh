@@ -23,7 +23,7 @@ cmp=$1
 success_total=0
 failure_total=0
 
-num_stages=5
+num_stages=6
 
 for i in `seq 1 $num_stages`; do
     success=0
@@ -31,7 +31,7 @@ for i in `seq 1 $num_stages`; do
     echo "===================================================="
     echo "STAGE $i"
     echo "===================Valid Programs==================="
-    for prog in ./stage_$i/valid/*.c; do
+    for prog in `ls stage_$i/valid/{,**/}*.c 2>/dev/null`; do
         gcc -w $prog
         ./a.out
         expected_exit_code=$?
@@ -41,7 +41,7 @@ for i in `seq 1 $num_stages`; do
         base="${prog%.*}" #name of executable (filename w/out extension)
         ./$base
         actual_exit_code=$?
-        test_name=$(basename $base)
+        test_name="${base##*valid/}"
         printf '%s' "$test_name"
         printf '%*.*s' 0 $((padlength - ${#test_name})) "$padding_dots"
 
@@ -66,9 +66,9 @@ for i in `seq 1 $num_stages`; do
         rm $base      
     done
     echo "===================Invalid Programs================="
-    for prog in ./stage_$i/invalid/*.c; do
+    for prog in `ls stage_$i/invalid/{,**/}*.c 2>/dev/null`; do
         base="${prog%.*}" #name of executable (filename w/out extension)
-        test_name=$(basename $base)
+        test_name="${base##*invalid/}"
 
         $cmp $prog >/dev/null 2>&1
         failed=$? #failed, as we expect, if exit code != 0
