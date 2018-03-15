@@ -5,12 +5,12 @@ padlength=50
 
 test_success () {
     echo "OK"
-    ((success++)) 
+    ((success++))
 }
 
 test_failure () {
     echo "FAIL"
-    ((fail++))    
+    ((fail++))
 }
 
 if [ "$1" == "" ]; then
