@@ -7,5 +7,7 @@ int main() {
         int j = j * 2 + i;
     }
 
-    return j;
+    int k = 3;
+
+    return j + k;
 }
