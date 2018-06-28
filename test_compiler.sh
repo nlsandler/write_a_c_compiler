@@ -33,13 +33,13 @@ for i in `seq 1 $num_stages`; do
     echo "===================Valid Programs==================="
     for prog in `ls stage_$i/valid/{,**/}*.c 2>/dev/null`; do
         gcc -w $prog
-        ./a.out
+        expected_out=`./a.out`
         expected_exit_code=$?
         rm a.out
 
         $cmp $prog >/dev/null
         base="${prog%.*}" #name of executable (filename w/out extension)
-        ./$base
+        actual_out=`./$base`
         actual_exit_code=$?
         test_name="${base##*valid/}"
         printf '%s' "$test_name"
@@ -56,7 +56,7 @@ for i in `seq 1 $num_stages`; do
             fi
         else
             # make sure exit code is correct
-            if [ "$expected_exit_code" -ne "$actual_exit_code" ]
+            if [ "$expected_exit_code" -ne "$actual_exit_code" ] || [ "$expected_out" != "$actual_out" ]
             then
                 test_failure
             else
