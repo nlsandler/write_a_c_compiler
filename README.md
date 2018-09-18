@@ -4,8 +4,15 @@ This is a set of C test programs to help you write your own compiler. They were 
 
 ## Usage
 
+### test all
 ```
 ./test_compiler.sh /path/to/your/compiler
+```
+
+### test specific stages
+To test stage1 and stage3,
+```
+./test_compiler.sh /path/to/your/compiler 1 3
 ```
 
 In order to use this script, your compiler needs to follow this spec:
