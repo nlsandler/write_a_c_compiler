@@ -4,9 +4,13 @@ This is a set of C test programs to help you write your own compiler. They were 
 
 ## Usage
 
+Run the tests with:
 ```
-./test_compiler.sh /path/to/your/compiler
+./test_compiler.sh /path/to/your/compiler [N_STEPS]
 ```
+If the `N_STEPS` argument is left out, all steps (currently 9) will be run,
+but by setting it you can avoid noisy errors when testing an early-stage
+compiler implementation.
 
 In order to use this script, your compiler needs to follow this spec:
 
