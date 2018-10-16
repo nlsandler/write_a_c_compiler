@@ -97,7 +97,6 @@ fi
 if test 1 -lt $#; then
    testcases=("$@") # [1..-1] is testcases
    for i in `seq 2 $#`; do
-       echo ${testcases[$i-1]}
        test_stage ${testcases[$i-1]}
    done
    total_summary
