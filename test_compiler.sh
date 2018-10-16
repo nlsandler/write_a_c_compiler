@@ -2,6 +2,9 @@
 
 padding_dots=$(printf '%0.1s' "."{1..60})
 padlength=50
+cmp=$1
+success_total=0
+failure_total=0
 
 test_success () {
     echo "OK"
@@ -13,25 +16,13 @@ test_failure () {
     ((fail++))
 }
 
-if [ "$1" == "" ]; then
-    echo "USAGE: ./test_compiler.sh /path/to/compiler"
-    exit 1
-fi
-
-cmp=$1
-
-success_total=0
-failure_total=0
-
-num_stages=9
-
-for i in `seq 1 $num_stages`; do
+test_stage () {
     success=0
     fail=0
     echo "===================================================="
-    echo "STAGE $i"
+    echo "STAGE $1"
     echo "===================Valid Programs==================="
-    for prog in `ls stage_$i/valid/{,**/}*.c 2>/dev/null`; do
+    for prog in `ls stage_$1/valid/{,**/}*.c 2>/dev/null`; do
         gcc -w $prog
         expected_out=`./a.out`
         expected_exit_code=$?
@@ -66,7 +57,7 @@ for i in `seq 1 $num_stages`; do
         rm $base      
     done
     echo "===================Invalid Programs================="
-    for prog in `ls stage_$i/invalid/{,**/}*.c 2>/dev/null`; do
+    for prog in `ls stage_$1/invalid/{,**/}*.c 2>/dev/null`; do
         base="${prog%.*}" #name of executable (filename w/out extension)
         test_name="${base##*invalid/}"
 
@@ -85,11 +76,37 @@ for i in `seq 1 $num_stages`; do
             test_success
         fi
     done
-    echo "===================Stage $i Summary================="
+    echo "===================Stage $1 Summary================="
     printf "%d successes, %d failures\n" $success $fail
     ((success_total=success_total+success))
     ((failure_total=failure_total + fail))
+}
+
+total_summary () {
+    echo "===================TOTAL SUMMARY===================="
+    printf "%d successes, %d failures\n" $success_total $failure_total
+}
+
+if [ "$1" == "" ]; then
+    echo "USAGE: ./test_compiler.sh /path/to/compiler [stages(optional)]"
+    echo "EXAMPLE(test specific stages): ./test_compiler.sh ./mycompiler 1 2 4"
+    echo "EXAMPLE(test all): ./test_compiler.sh ./mycompiler"
+    exit 1
+fi
+
+if test 1 -lt $#; then
+   testcases=("$@") # [1..-1] is testcases
+   for i in `seq 2 $#`; do
+       test_stage ${testcases[$i-1]}
+   done
+   total_summary
+   exit 0
+fi
+
+num_stages=9
+
+for i in `seq 1 $num_stages`; do
+    test_stage $i
 done
 
-echo "===================TOTAL SUMMARY===================="
-printf "%d successes, %d failures\n" $success_total $failure_total
+total_summary
