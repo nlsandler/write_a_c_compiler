@@ -22,7 +22,7 @@ test_stage () {
     echo "===================================================="
     echo "STAGE $1"
     echo "===================Valid Programs==================="
-    for prog in `ls stage_$1/valid/{,**/}*.c 2>/dev/null`; do
+    for prog in `find . -type f -name "*.c" -path "./stage_$1/valid/*" -not -path "*/valid_multifile/*" 2>/dev/null`; do
         gcc -w $prog
         expected_out=`./a.out`
         expected_exit_code=$?
@@ -54,7 +54,32 @@ test_stage () {
                 test_success
             fi
         fi
-        rm $base      
+        rm $base
+    done
+    for dir in `ls -d stage_10/valid_multifile/*`; do
+        gcc -w $dir/*
+        expected_out=`./a.out`
+        expected_exit_code=$?
+        rm a.out
+
+        base="${dir%.*}" #name of executable (directory w/out extension)
+        test_name="${base##*valid_multifile/}"
+
+        # need to explicitly specify output name
+        $cmp -o "$test_name" $dir/* >/dev/null
+        actual_out=`./$test_name`
+        actual_exit_code=$?
+        printf '%s' "$test_name"
+        printf '%*.*s' 0 $((padlength - ${#test_name})) "$padding_dots"
+
+        # make sure exit code is correct
+        if [ "$expected_exit_code" -ne "$actual_exit_code" ] || [ "$expected_out" != "$actual_out" ]
+        then
+            test_failure
+        else
+            test_success
+        fi
+        rm $test_name
     done
     echo "===================Invalid Programs================="
     for prog in `ls stage_$1/invalid/{,**/}*.c 2>/dev/null`; do
@@ -103,7 +128,7 @@ if test 1 -lt $#; then
    exit 0
 fi
 
-num_stages=9
+num_stages=10
 
 for i in `seq 1 $num_stages`; do
     test_stage $i
