@@ -6,6 +6,12 @@ cmp=$1
 success_total=0
 failure_total=0
 
+print_test_name () {
+    test_name=$1
+    printf '%s' "$test_name"
+    printf '%*.*s' 0 $((padlength - ${#test_name})) "$padding_dots"
+}
+
 test_success () {
     echo "OK"
     ((success++))
@@ -16,6 +22,22 @@ test_failure () {
     ((fail++))
 }
 
+run_correct_program () {
+    expected_out=`./a.out`
+    expected_exit_code=$?
+    rm a.out
+}
+
+compare_program_results () {
+    # make sure exit code is correct
+    if [ "$expected_exit_code" -ne "$actual_exit_code" ] || [ "$expected_out" != "$actual_out" ]
+    then
+        test_failure
+    else
+        test_success
+    fi
+}
+
 test_stage () {
     success=0
     fail=0
@@ -23,18 +45,18 @@ test_stage () {
     echo "STAGE $1"
     echo "===================Valid Programs==================="
     for prog in `find . -type f -name "*.c" -path "./stage_$1/valid/*" -not -path "*/valid_multifile/*" 2>/dev/null`; do
+
         gcc -w $prog
-        expected_out=`./a.out`
-        expected_exit_code=$?
-        rm a.out
+        run_correct_program
+
+        base="${prog%.*}" #name of executable (filename w/out extension)
+        test_name="${base##*valid/}"
 
         $cmp $prog >/dev/null
-        base="${prog%.*}" #name of executable (filename w/out extension)
         actual_out=`./$base`
         actual_exit_code=$?
-        test_name="${base##*valid/}"
-        printf '%s' "$test_name"
-        printf '%*.*s' 0 $((padlength - ${#test_name})) "$padding_dots"
+
+        print_test_name $test_name
 
         if [[ $test_name == "undefined"* ]]; then
             # return value is undefined
@@ -46,21 +68,15 @@ test_stage () {
                 test_success
             fi
         else
-            # make sure exit code is correct
-            if [ "$expected_exit_code" -ne "$actual_exit_code" ] || [ "$expected_out" != "$actual_out" ]
-            then
-                test_failure
-            else
-                test_success
-            fi
+            compare_program_results
         fi
         rm $base
     done
-    for dir in `ls -d stage_10/valid_multifile/*`; do
+    # programs with multiple source files
+    for dir in `ls -d stage_$1/valid_multifile/* 2>/dev/null` ; do
         gcc -w $dir/*
-        expected_out=`./a.out`
-        expected_exit_code=$?
-        rm a.out
+
+        run_correct_program
 
         base="${dir%.*}" #name of executable (directory w/out extension)
         test_name="${base##*valid_multifile/}"
@@ -69,30 +85,27 @@ test_stage () {
         $cmp -o "$test_name" $dir/* >/dev/null
         actual_out=`./$test_name`
         actual_exit_code=$?
-        printf '%s' "$test_name"
-        printf '%*.*s' 0 $((padlength - ${#test_name})) "$padding_dots"
 
-        # make sure exit code is correct
-        if [ "$expected_exit_code" -ne "$actual_exit_code" ] || [ "$expected_out" != "$actual_out" ]
-        then
-            test_failure
-        else
-            test_success
-        fi
+        print_test_name $test_name
+
+        # check output/exit codes
+        compare_program_results
+
         rm $test_name
     done
     echo "===================Invalid Programs================="
     for prog in `ls stage_$1/invalid/{,**/}*.c 2>/dev/null`; do
+
         base="${prog%.*}" #name of executable (filename w/out extension)
         test_name="${base##*invalid/}"
 
         $cmp $prog >/dev/null 2>&1
         failed=$? #failed, as we expect, if exit code != 0
 
-        printf '%s' "$test_name"
-        printf '%.*s' $((padlength - ${#test_name})) "$padding_dots"
+        print_test_name $test_name
 
-        if [[ -f $base || -f $base".s" ]] #make sure neither executable nor assembly was produced
+        #make sure neither executable nor assembly was produced
+        if [[ -f $base || -f $base".s" ]] && [[ $failed -ne 0 ]]
         then
             test_failure
             rm $base 2>/dev/null
