@@ -22,6 +22,16 @@ test_failure () {
     ((fail++))
 }
 
+test_not_implemented () {
+    echo "NOT IMPLEMENTED"
+}
+
+run_our_program () {
+    actual_out=`./$1 2>/dev/null`
+    actual_exit_code=$?
+    rm $1 2>/dev/null
+}
+
 run_correct_program () {
     expected_out=`./a.out`
     expected_exit_code=$?
@@ -52,25 +62,25 @@ test_stage () {
         base="${prog%.*}" #name of executable (filename w/out extension)
         test_name="${base##*valid/}"
 
-        $cmp $prog >/dev/null
-        actual_out=`./$base`
-        actual_exit_code=$?
-
         print_test_name $test_name
+        $cmp $prog 2>/dev/null
+        status=$?
 
-        if [[ $test_name == "undefined"* ]]; then
-            # return value is undefined
-            # make sure it runs w/out segfaulting, but otherwise don't check exit code
-            if [ "$actual_exit_code" -eq 139 ]; then
-                #segfault!
-                test_failure
+        if [[ $test_name == "skip_on_failure"* ]]; then
+            # this may depend on features we haven't implemented yet
+            # if compilation succeeds, make sure it gives the right result
+            # otherwise don't count it as success or failure
+            if [[ -f $base ]] && [[ $status -eq 0 ]]; then
+                # it succeeded, so run it and make sure it gives the right result
+                run_our_program $base
+                compare_program_results
             else
-                test_success
+                test_not_implemented
             fi
         else
+            run_our_program $base
             compare_program_results
         fi
-        rm $base
     done
     # programs with multiple source files
     for dir in `ls -d stage_$1/valid_multifile/* 2>/dev/null` ; do
@@ -83,15 +93,13 @@ test_stage () {
 
         # need to explicitly specify output name
         $cmp -o "$test_name" $dir/* >/dev/null
-        actual_out=`./$test_name`
-        actual_exit_code=$?
 
         print_test_name $test_name
 
         # check output/exit codes
+        run_our_program $test_name
         compare_program_results
 
-        rm $test_name
     done
     echo "===================Invalid Programs================="
     for prog in `ls stage_$1/invalid/{,**/}*.c 2>/dev/null`; do
@@ -100,12 +108,12 @@ test_stage () {
         test_name="${base##*invalid/}"
 
         $cmp $prog >/dev/null 2>&1
-        failed=$? #failed, as we expect, if exit code != 0
-
+        status=$? #failed, as we expect, if exit code != 0
         print_test_name $test_name
 
-        #make sure neither executable nor assembly was produced
-        if [[ -f $base || -f $base".s" ]] && [[ $failed -ne 0 ]]
+        # make sure neither executable nor assembly was produced
+        # and exit code is non-zero
+        if [[ -f $base || -f $base".s" ]]
         then
             test_failure
             rm $base 2>/dev/null
