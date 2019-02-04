@@ -1,7 +1,7 @@
-static int foo;
+int foo;
 
 int main() {
     return foo;
 }
 
-static int foo = 3;
+int foo = 3;
