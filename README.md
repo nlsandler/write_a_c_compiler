@@ -1,5 +1,7 @@
 # Write a C Compiler!
 
+**This repo is no longer active. The latest version of this test suite, which accompanies the [Writing a C Compiler book](https://nostarch.com/writing-c-compiler), is available [here](https://github.com/nlsandler/writing-a-c-compiler-tests/).**
+
 This is a set of C test programs to help you write your own compiler. They were written to accompany [this tutorial](https://norasandler.com/2017/11/29/Write-a-Compiler.html).
 
 ## Usage

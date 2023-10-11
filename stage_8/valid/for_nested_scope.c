@@ -4,7 +4,8 @@ int main() {
 
     for (int i = 100; i > 0; i = i - 1) {
         int i = 0;
-        int j = j * 2 + i;
+        int k = j;
+        int j = k * 2 + i;
     }
 
     int k = 3;
